@@ -1,0 +1,28 @@
+name: Update COT
+
+on:
+  schedule:
+    - cron: "45 20 * * 5"   # Friday evening (report is out 15:30 New York time)
+    - cron: "45 21 * * 5"   # covers daylight-saving shift
+    - cron: "0 6 * * *"     # daily safety refresh
+  workflow_dispatch:         # lets you press "Run workflow" manually
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch COT
+        run: python fetch_cot.py
+      - name: Commit if changed
+        run: |
+          git config user.name "cot-bot"
+          git config user.email "cot-bot@users.noreply.github.com"
+          git add cot.json
+          git diff --cached --quiet || (git commit -m "Update COT" && git push)
